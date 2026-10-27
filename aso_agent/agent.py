@@ -10,7 +10,7 @@ from aso_agent.tools import list_directory, get_file_content, get_system_info
 ollama_model = LiteLlm(
     #model="ollama/qwen3:8b",
     #model="ollama/tev1:4b",
-    model="ollama/qwen3:4b",
+    model="ollama_chat/qwen3:4b",
     base_url="http://10.0.2.2:11434",
     stream=True,
 )

@@ -149,7 +149,7 @@ def get_system_info() -> dict:
             "OS": platform.system(),
             "version": platform.version(),
             "architecture": platform.machine(),
-            "hostname": platform.node()
+            "hostname": platform.node(),
         }
 
         if not contents:
