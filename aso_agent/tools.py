@@ -3,6 +3,54 @@ import random
 import datetime
 from zoneinfo import ZoneInfo
 
+def find_file(filename: str) -> dict:
+    """
+    Searches for a file by NAME (no path needed) and returns its content
+
+    Use this tool when the user gives you only a file name, e.g. "show raport.txt"
+    or 'what is in notes.txt". Wildcards like '*.txt' are allowed.
+
+    Args:
+        filename (str): The file name to look for, e.g. 'raport.txt'. This argument is 
+        REQUIRED
+    
+    Returns:
+        dict: 'status', 'matches' (list of paths) and if exactly one file was found,
+        'content' (first 5000 characters).
+    """
+
+    import fnmatch
+    SKIP_DIRS={".git", ".venv", "node_modules"}
+
+    print(f"find_file clled for: {filename}")
+    name = os.path.basename(filename)
+    matches = []
+    try:
+        for dirpath, dirnames, files in os.walk("."):
+            dirnames[:]=[d for d in dirnames if d not in SKIP_DIRS]
+            for f in fnmatch.filter(files, name):
+                matches.append(os.path.join(dirpath, f))
+            if len(matches) >= 10:
+                break
+
+        if not matches:
+            return {"status": "error",
+                    "error_message": f"File {name} not found"}
+        if len(matches) > 1:
+            return {"status": "success",
+                    "matches": matches,
+                    "note": "Multiple files found. Ask user which one"}
+
+        with open(matches[0], r, encoding="utf-8", errors="replace") as f:
+            content = f.read(5000)
+            return {"status": "success",
+                    "matches": matches,
+                    "content": content}
+    except Exception as e:
+        return {"status": "error",
+                "error_message": str(e)}
+
+
 def list_directory(path: str) -> dict:
     """
     Lists all files inside a specified file system path.

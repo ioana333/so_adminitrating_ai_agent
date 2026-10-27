@@ -4,7 +4,7 @@ import asyncio
 from google.adk.agents import Agent
 from google.adk.models.lite_llm import LiteLlm
 
-from aso_agent.tools import list_directory, get_file_content, get_system_info
+from aso_agent.tools import list_directory, get_file_content, get_system_info, find_file
 
 
 ollama_model = LiteLlm(
@@ -23,7 +23,7 @@ ollama_model = LiteLlm(
 # *when* to do it.
 
 DETAILED_INSTRUCTIONS = """
-You are a simple assistant. You have three tools.
+You are a simple assistant. You have four tools.
 Your ONLY job is to follow these rules:
 
 1.  If the user asks to see what is in a directory, call `list_directory(path="...")`.
@@ -62,7 +62,7 @@ root_agent = Agent(
     model=ollama_model,
     description="A simple agent that can get the files from a directory, read files and show system info",
     instruction=DETAILED_INSTRUCTIONS,
-    tools=[get_file_content, list_directory, get_system_info],
+    tools=[get_file_content, list_directory, get_system_info, find_file],
 )
 
 async def main():
