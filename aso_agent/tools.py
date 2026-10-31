@@ -3,52 +3,6 @@ import random
 import datetime
 from zoneinfo import ZoneInfo
 
-def find_file(filename: str) -> dict:
-    """
-    Searches for a file by NAME (no path needed) and returns its content
-
-    Use this tool when the user gives you only a file name, e.g. "show raport.txt"
-    or 'what is in notes.txt". Wildcards like '*.txt' are allowed.
-
-    Args:
-        filename (str): The file name to look for, e.g. 'raport.txt'. This argument is 
-        REQUIRED
-    
-    Returns:
-        dict: 'status', 'matches' (list of paths) and if exactly one file was found,
-        'content' (first 5000 characters).
-    """
-
-    import fnmatch
-    SKIP_DIRS={".git", ".venv", "node_modules"}
-
-    print(f"find_file clled for: {filename}")
-    name = os.path.basename(filename)
-    matches = []
-    try:
-        for dirpath, dirnames, files in os.walk("."):
-            dirnames[:]=[d for d in dirnames if d not in SKIP_DIRS]
-            for f in fnmatch.filter(files, name):
-                matches.append(os.path.join(dirpath, f))
-            if len(matches) >= 10:
-                break
-
-        if not matches:
-            return {"status": "error",
-                    "error_message": f"File {name} not found"}
-        if len(matches) > 1:
-            return {"status": "success",
-                    "matches": matches,
-                    "note": "Multiple files found. Ask user which one"}
-
-        with open(matches[0], r, encoding="utf-8", errors="replace") as f:
-            content = f.read(5000)
-            return {"status": "success",
-                    "matches": matches,
-                    "content": content}
-    except Exception as e:
-        return {"status": "error",
-                "error_message": str(e)}
 
 
 def list_directory(path: str) -> dict:
@@ -130,6 +84,27 @@ def get_file_content(path: str) -> dict:
     try:
 
         if not os.path.exists(path):
+            import fnmatch
+            SKIP_DIRS = {".git", ".venv", "venv"}
+            name = os.path.basename(path)
+            matches=[]
+            for dirpath, dirnames, files in os.walk("."):
+                dirnames[:] = [d for d in dirnames if d not in SKIP_DIRS]
+                for f in fnmatch.filter(files, name):
+                    matches.append(os.path.join(dirpath, f))
+                if len(matches) >= 10:
+                    break
+            if len(matches) > 1:
+                return{
+                    "status": "success",
+                    "path": path,
+                    "matches": matches,
+                    "note": "Multiple files found. Ask the user which one"
+                }
+            if len(matches) == 1:
+                path = matches[0]
+
+        if not os.path.exists(path):
             return {"status": "error",
                     "path": path,
                     "error_message": f"Path not found: '{path}'"}
@@ -162,26 +137,52 @@ def get_file_content(path: str) -> dict:
 
 def get_system_info() -> dict:
     """
-    Returns the basic information about the operating system.
+    Returns detailed information about the computer: opearing system
+    CPU, RAM, disk and uptime.
 
-    Use this tool when the user asks about the operating system, the OS, its version,
-    the architecture, CPU, RAM or the machine name    
+    Use this tool when the user asks about the operating system, the OS, its version, 
+    the architecture, the CPU, cores, RAM, memory, disk space, uptime or the 
+    machine name.
 
     Returns:
         dict: A dictionary with:
-              - 'status': 'success' or 'error'
-              - 'path': The path that was listed
-              - 'contents': (on success) A dictionary of strings
-              - 'error_message': (on error) A string explaining what went wrong
+            - 'status': 'success' or 'error'
+            - 'contents': (on success) A dictionary with the sections 'os', 'cpu', 'ram'
+        and 'disk'
+            - 'error_message': (on error) A string explaining what went wrong
     """
     print(f"get_system_info: ")  # Debug log
     try:
+        import platform
+        import pustil
+        
+        gb = 1024 ** 3
+        
+        freq = pustil.cpu_freq()
+        ram = pustil.virtual_memory()
+        disk = pustil.disk_usage(os.path.abspath(os.sep))
+        boot = datetime.datetime.fromtimestamp(pustil.boot_time())
 
         contents = {
             "OS": platform.system(),
+            "release": platform.release(),
             "version": platform.version(),
             "architecture": platform.machine(),
-            "hostname": platform.node()
+            "hostname": platform.node(),
+            "boot_time": boot,
+            "cpu": {
+                "mpdel": platform.processor() or "unknown",
+                "physical_cores": pustil.cpu_count(logical=False),
+                "logical_cores": pustil.cpu_count(logical=True),
+                "max_freq": round(freq.max, 0) if freq else "unknown",
+                "usage": psutil.cpu_precent(interval=0.5),
+            },
+            "ram": round(ram.total / gb, 2),
+            "disk": {
+                "total_gb": round(disk.total / gb, 2),
+                "free_gb": round(disk.free / gb, 2),
+                "used": disk.percent,
+            },
         }
 
         if not contents:

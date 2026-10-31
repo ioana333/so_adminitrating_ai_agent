@@ -4,7 +4,7 @@ import asyncio
 from google.adk.agents import Agent
 from google.adk.models.lite_llm import LiteLlm
 
-from aso_agent.tools import list_directory, get_file_content, get_system_info, find_file
+from aso_agent.tools import list_directory, get_file_content, get_system_info
 
 
 ollama_model = LiteLlm(
@@ -23,12 +23,12 @@ ollama_model = LiteLlm(
 # *when* to do it.
 
 DETAILED_INSTRUCTIONS = """
-You are a simple assistant. You have four tools.
+You are a simple assistant. You have three tools.
 Your ONLY job is to follow these rules:
 
 1.  If the user asks to see what is in a directory, call `list_directory(path="...")`.
 2.  If the user asks to see what is in a file, call `get_file_content(path="...")`.
-3.  If the user asks to see the system informations, call `get_system_info()`.
+3.  If the user asks about the system, OS, CPU, cores, RAM, memory or disk, call `get_system_info()`.
     -   If no path is given by the user, YOU MUST use `path="."`.
 4.  If the user asks for ANYTHING else, your final answer MUST be: `Final Answer: I'm sorry, I can't help you with that`
 
@@ -44,15 +44,21 @@ WHEN YOU HAVE THE INFORMATION TO ANSWER THE USER, YOU **MUST** prefix your respo
 ---
 **Example 1: The List Directory (Default Path) Flow**
 User: list files
-Agent: [Tool Call: `list_direcotry(path=".")`]
+Agent: [Tool Call: `list_directory(path=".")`]
 Tool: `{"status": "success", "path": ".", "contents": ["FOLDER_TESTE", "aso_agent", "aso_agent_mcp", "aso_multiple_agents", "tools"]}`
 Agent: `Final Answer: Here are the contents of '.': agent.py, .venv, README.md`
 
 **Example 2: Get Content**
 User: what is in 
-Agent: [Tool Call: `list_direcotry(path="./FOLDER_TESTE/notite.txt")`]
+Agent: [Tool Call: `get_file_content(path="./FOLDER_TESTE/notite.txt")`]
 Tool: `{"status": "success", "path": "./FOLDER_TESTE/notite.txt", "contents": "Notite generale de test"}`
 Agent: `Final Answer: Here are the contents of './FOLDER_TESTE/notite.txt': Notite generale de test`
+
+**Example 3: System Info**
+User: how much RAM and how many cores does my computer have?
+Agent: [Tool Call: `get_system_info()`]
+Tool: `{"status": "success", "contents": {"os": {"name": "Linux", "release": "6.8.0", "architecture": "x86_64", "hostname": "aso-vm"}, "cpu": {"model": "Intel(R) Core(TM) i7", "physical_cores": 2, "logical_cores": 4, "max_frequency_mhz": 2800.0, "usage_percent": 3.2}, "ram": {"total_gb": 3.82, "available_gb": 2.9, "used_percent": 24.1}, "disk": {"total_gb": 40.0, "free_gb": 25.3, "used_percent": 36.7}}}`
+Agent: `Final Answer: Your computer has 2 physical cores (4 logical) and 3.82 GB of RAM, of which 2.9 GB is available.`
 
 ---
 """
@@ -62,7 +68,7 @@ root_agent = Agent(
     model=ollama_model,
     description="A simple agent that can get the files from a directory, read files and show system info",
     instruction=DETAILED_INSTRUCTIONS,
-    tools=[get_file_content, list_directory, get_system_info, find_file],
+    tools=[get_file_content, list_directory, get_system_info],
 )
 
 async def main():
