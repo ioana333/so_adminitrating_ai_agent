@@ -169,14 +169,14 @@ def get_system_info() -> dict:
     print(f"get_system_info: ")  # Debug log
     try:
         import platform
-        import pustil
+        import psutil
         
         gb = 1024 ** 3
         
-        freq = pustil.cpu_freq()
-        ram = pustil.virtual_memory()
-        disk = pustil.disk_usage(os.path.abspath(os.sep))
-        boot = datetime.datetime.fromtimestamp(pustil.boot_time())
+        freq = psutil.cpu_freq()
+        ram = psutil.virtual_memory()
+        disk = psutil.disk_usage(os.path.abspath(os.sep))
+        boot = datetime.datetime.fromtimestamp(psutil.boot_time())
 
         contents = {
             "OS": platform.system(),
@@ -184,13 +184,13 @@ def get_system_info() -> dict:
             "version": platform.version(),
             "architecture": platform.machine(),
             "hostname": platform.node(),
-            "boot_time": boot,
+            "boot_time": boot.strftime("%Y-%m-%d %H:%M:%S"),
             "cpu": {
-                "mpdel": platform.processor() or "unknown",
-                "physical_cores": pustil.cpu_count(logical=False),
-                "logical_cores": pustil.cpu_count(logical=True),
+                "model": platform.processor() or "unknown",
+                "physical_cores": psutil.cpu_count(logical=False),
+                "logical_cores": psutil.cpu_count(logical=True),
                 "max_freq": round(freq.max, 0) if freq else "unknown",
-                "usage": psutil.cpu_precent(interval=0.5),
+                "usage": psutil.cpu_percent(interval=0.5),
             },
             "ram": round(ram.total / gb, 2),
             "disk": {
